@@ -11,14 +11,15 @@ terraform {
 
 provider "aws" {
   region  = "us-east-1"
+  alias  = "acm_provider"
 }
 
-# # Creates S3 bucket
+# Creates s3 bucket
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = "mileshoover.com"
+  bucket = var.domain_name
 }
 
-# Configures S3 options
+# Creates s3 configuration
 resource "aws_s3_bucket_website_configuration" "s3_config" {
   bucket = aws_s3_bucket.s3_bucket.bucket
 
@@ -31,15 +32,15 @@ resource "aws_s3_bucket_website_configuration" "s3_config" {
   }
 }
 
-# Sets ACL policy
-resource "aws_s3_bucket_acl" "s3-bucket-acl" {
+# Creates bucket ACL policy
+resource "aws_s3_bucket_acl" "s3_bucket_acl" {
   bucket = aws_s3_bucket.s3_bucket.id
   acl    = "public-read"
 }
 
-# Sets bucket policy
-resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
-  bucket = aws_s3_bucket.s3-bucket.id
+# Creates bucket policy
+resource "aws_s3_bucket_policy" "allow_public_read" {
+  bucket = aws_s3_bucket.s3_bucket.id
   policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -72,17 +73,22 @@ POLICY
   etag = filemd5("website/${each.value}")
 }*/
 
-# # Cloudfront Distribution
+# Creates cloudfront distribution
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = aws_s3_bucket.s3_bucket.bucket_regional_domain_name
-    origin_id   = local.s3_origin_id
+    origin_id   = aws_s3_bucket.s3_bucket.id
   }
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.s3_origin_id
+    target_origin_id = aws_s3_bucket.s3_bucket.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
 
     forwarded_values {
       query_string = false
@@ -92,28 +98,20 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       }
     }
 
-    viewer_protocol_policy = "allow-all"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
   }
 
   enabled             = true
   default_root_object = "index.html"
+  aliases             = [var.domain_name, "*.${var.domain_name}"]
 
   restrictions {
     geo_restriction {
-      restriction_type = "whitelist"
-      locations        = ["US", "CA", "GB", "DE"]
+      restriction_type = "none"
     }
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = 
+    ssl_support_method  = "sni-only"
   }
 }
-
-
-
-
-
