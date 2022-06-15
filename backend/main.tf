@@ -189,3 +189,14 @@ resource "aws_route53_record" "www_record" {
   evaluate_target_health = true
   }
 }
+
+resource "aws_dynamodb_table" "count_db"{
+  name = "count_db"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key = "PK"
+
+  attribute {
+    name = "PK"
+    type = "N"
+  }
+}
