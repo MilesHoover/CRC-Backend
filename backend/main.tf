@@ -14,12 +14,12 @@ provider "aws" {
   alias  = "acm_provider"
 }
 
-# Creates s3 bucket
+# Creates S3 bucket
 resource "aws_s3_bucket" "s3_bucket" {
   bucket = var.domain_name
 }
 
-# Creates s3 configuration
+# Creates S3 configuration
 resource "aws_s3_bucket_website_configuration" "s3_config" {
   bucket = aws_s3_bucket.s3_bucket.bucket
 
@@ -64,14 +64,26 @@ POLICY
 
 # Adds website objects to S3
 # Feature is not currently working
-
 /*resource "aws_s3_object" "s3_objects" {
   for_each = fileset("website/", "**")
-  bucket = aws_s3_bucket.s3-bucket.id
+  bucket = aws_s3_bucket.s3_bucket.id
   key = each.value
   source = "website/${each.value}"
   etag = filemd5("website/${each.value}")
 }*/
+
+# Creates redirect bucket
+resource "aws_s3_bucket" "s3_redirect_bucket" {
+  bucket = "www.${var.domain_name}"
+}
+
+# Creates S3 redirect configuration
+resource "aws_s3_bucket_website_configuration" "s3_redirect_config" {
+  bucket = aws_s3_bucket.s3_redirect_bucket.bucket
+  redirect_all_requests_to {
+    host_name = aws_s3_bucket.s3_bucket.id
+  }
+}
 
 # Creates cloudfront distribution
 resource "aws_cloudfront_distribution" "s3_distribution" {
@@ -152,8 +164,8 @@ resource "aws_route53_record" "website_records" {
   zone_id         = data.aws_route53_zone.website_zone.zone_id
 }
 
-# Creates Route53 record for www website
-resource "aws_route53_record" "www" {
+# Creates Route53 record for root website
+resource "aws_route53_record" "root_record" {
   zone_id = data.aws_route53_zone.website_zone.zone_id
   name    = var.domain_name
   type    = "A"
@@ -162,5 +174,18 @@ resource "aws_route53_record" "www" {
     name                   = aws_cloudfront_distribution.s3_distribution.domain_name
     zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
     evaluate_target_health = true
+  }
+}
+
+# Creates Route53 record for 'www' website
+resource "aws_route53_record" "www_record" {
+  zone_id = data.aws_route53_zone.website_zone.zone_id
+  name    = "www.${var.domain_name}"
+  type    = "A"
+
+  alias {
+  name                   = aws_s3_bucket.s3_redirect_bucket.website_domain
+  zone_id                = aws_s3_bucket.s3_redirect_bucket.hosted_zone_id
+  evaluate_target_health = true
   }
 }
