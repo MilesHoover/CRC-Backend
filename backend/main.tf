@@ -14,12 +14,12 @@ provider "aws" {
   alias  = "acm_provider"
 }
 
-# Creates S3 bucket
+# Root S3 bucket
 resource "aws_s3_bucket" "s3_bucket" {
   bucket = var.domain_name
 }
 
-# Creates S3 configuration
+# Root S3 bucket configuration
 resource "aws_s3_bucket_website_configuration" "s3_config" {
   bucket = aws_s3_bucket.s3_bucket.bucket
 
@@ -32,13 +32,13 @@ resource "aws_s3_bucket_website_configuration" "s3_config" {
   }
 }
 
-# Creates bucket ACL policy
+# Root S3 bucket ACL
 resource "aws_s3_bucket_acl" "s3_bucket_acl" {
   bucket = aws_s3_bucket.s3_bucket.id
   acl    = "public-read"
 }
 
-# Creates bucket policy
+# Root S3 bucket policy
 resource "aws_s3_bucket_policy" "allow_public_read" {
   bucket = aws_s3_bucket.s3_bucket.id
   policy = <<POLICY
@@ -62,8 +62,8 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 POLICY
 }
 
-# Adds website objects to S3
-# Feature is not currently working
+# Root S3 bucket objects
+# # Feature is not currently working
 /*resource "aws_s3_object" "s3_objects" {
   for_each = fileset("website/", "**")
   bucket = aws_s3_bucket.s3_bucket.id
@@ -72,12 +72,12 @@ POLICY
   etag = filemd5("website/${each.value}")
 }*/
 
-# Creates redirect bucket
+# Redirect S3 bucket
 resource "aws_s3_bucket" "s3_redirect_bucket" {
   bucket = "www.${var.domain_name}"
 }
 
-# Creates S3 redirect configuration
+# Redirect S3 bucket config
 resource "aws_s3_bucket_website_configuration" "s3_redirect_config" {
   bucket = aws_s3_bucket.s3_redirect_bucket.bucket
   redirect_all_requests_to {
@@ -85,7 +85,7 @@ resource "aws_s3_bucket_website_configuration" "s3_redirect_config" {
   }
 }
 
-# Creates cloudfront distribution
+# Cloudfront distribution
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = aws_s3_bucket.s3_bucket.bucket_regional_domain_name
@@ -128,25 +128,25 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 }
 
-# Creates ACM certificate
+# ACM certificate
 resource "aws_acm_certificate" "website_cert" {
   domain_name               = var.domain_name
   subject_alternative_names = ["*.${var.domain_name}"]
   validation_method         = "DNS"
 }
 
-# Validates ACM certification
+# ACM certification validation
 resource "aws_acm_certificate_validation" "website_validation" {
   certificate_arn         = aws_acm_certificate.website_cert.arn
   validation_record_fqdns = [for record in aws_route53_record.website_records : record.fqdn]
 }
 
-# Gives data about Route53 hosted zone
+# Route53 hosted zone data
 data "aws_route53_zone" "website_zone" {
   name = var.domain_name
 }
 
-# Creates Route53 records
+# Route53 records
 resource "aws_route53_record" "website_records" {
   for_each = {
     for dvo in aws_acm_certificate.website_cert.domain_validation_options : dvo.domain_name => {
@@ -164,7 +164,7 @@ resource "aws_route53_record" "website_records" {
   zone_id         = data.aws_route53_zone.website_zone.zone_id
 }
 
-# Creates Route53 record for root website
+# Route53 record for root domain
 resource "aws_route53_record" "root_record" {
   zone_id = data.aws_route53_zone.website_zone.zone_id
   name    = var.domain_name
@@ -177,7 +177,7 @@ resource "aws_route53_record" "root_record" {
   }
 }
 
-# Creates Route53 record for 'www' website
+# Route53 record for subdomain 'www.'
 resource "aws_route53_record" "www_record" {
   zone_id = data.aws_route53_zone.website_zone.zone_id
   name    = "www.${var.domain_name}"
@@ -190,13 +190,45 @@ resource "aws_route53_record" "www_record" {
   }
 }
 
+# DynamoDB table for page counter web app
 resource "aws_dynamodb_table" "count_db"{
-  name = "count_db"
+  name         = "count_db"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key = "PK"
+  hash_key     = "PK"
 
   attribute {
     name = "PK"
     type = "N"
   }
+}
+
+# API for page counter web app
+resource "aws_api_gateway_rest_api" "api" {
+  name        = "pagecount"
+  description = "This is my API for page counter web app"
+}
+
+# API resource 
+resource "aws_api_gateway_resource" "api_resource" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "apiresource"
+}
+
+# API method
+resource "aws_api_gateway_method" "api_method" {
+  rest_api_id   = aws_api_gateway_rest_api.counter_api.id
+  resource_id   = aws_api_gateway_resource.api_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# API integration
+resource "aws_api_gateway_integration" "api_integration" {
+  rest_api_id      = aws_api_gateway_rest_api.counter_api.id
+  resource_id      = aws_api_gateway_resource.api_resource.id
+  http_method      = "POST"
+  type             = "AWS"
+  uri              = aws_lambda_function.lambda.invoke_arn
+  content_handling = "CONVERT_TO_TEXT"
 }
