@@ -15,7 +15,7 @@ def increment_visitor():
                 'N': "0"
             }
         },
-        ExpressionAttributeValues = { "inc": {"N": "1"}},
+        ExpressionAttributeValues = { ":inc": {"N": "1"}},
         UpdateExpression = "ADD visitor :inc"
     )
 
