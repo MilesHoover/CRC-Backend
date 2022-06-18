@@ -217,7 +217,7 @@ resource "aws_api_gateway_resource" "api_resource" {
 
 # API method
 resource "aws_api_gateway_method" "api_method" {
-  rest_api_id   = aws_api_gateway_rest_api.counter_api.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.api_resource.id
   http_method   = "GET"
   authorization = "NONE"
@@ -225,17 +225,22 @@ resource "aws_api_gateway_method" "api_method" {
 
 # API integration
 resource "aws_api_gateway_integration" "api_integration" {
-  rest_api_id      = aws_api_gateway_rest_api.counter_api.id
-  resource_id      = aws_api_gateway_resource.api_resource.id
-  http_method      = "POST"
-  type             = "AWS"
-  uri              = aws_lambda_function.lambda.invoke_arn
-  content_handling = "CONVERT_TO_TEXT"
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.api_resource.id
+  http_method             = aws_api_gateway_method.api_method.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = aws_lambda_function.lambda.invoke_arn
+  content_handling        = "CONVERT_TO_TEXT"
+
+  depends_on = [
+    aws_api_gateway_method.api_method
+  ]
 }
 
 # API method response
 resource "aws_api_gateway_method_response" "api_method_response" {
-  rest_api_id = aws_api_gateway_rest_api.counter_api.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.api_resource.id
   http_method = aws_api_gateway_method.api_method.http_method
   status_code = "200"
@@ -251,21 +256,25 @@ resource "aws_api_gateway_method_response" "api_method_response" {
 
 # API integration response
 resource "aws_api_gateway_integration_response" "api_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.counter_api.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.api_resource.id
   http_method = aws_api_gateway_method.api_method.http_method
   status_code = aws_api_gateway_method_response.api_method_response.status_code
-  response_parameters {
+  response_parameters = {
     "method.response.header.Access-Control-Allow-Methods" = "'GET, POST'",
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type'",
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
+
+  depends_on = [
+    aws_api_gateway_integration.api_integration
+  ]
 }
 
 # API deployment
 resource "aws_api_gateway_deployment" "api_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.counter_api.id
-  triggers {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.api_resource.id,
       aws_api_gateway_method.api_method.id,
@@ -279,7 +288,80 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
 # API stage
 resource "aws_api_gateway_stage" "api_stage" {
-  rest_api_id   = aws_api_gateway_rest_api.counter_api.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   stage_name    = "counterapi"
+}
+
+# Lambda function
+resource "aws_lambda_function" "lambda" {
+  function_name = "counter_function"
+  role          = aws_iam_role.iam_lambda.arn
+  filename = "lambda/lambda_function.zip"
+  handler = "lambda_function.lambda_handler"
+  runtime = "python3.9"
+}
+
+# IAM Lambda role
+resource "aws_iam_role" "iam_lambda" {
+  name = "iam_lambda"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_lambda_permission" "apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*"
+}
+
+resource "aws_iam_policy" "lambda_to_dynamodb" {
+  name        = "lambda_to_dynamodb_access"
+  path        = "/"
+  description = "IAM policy for accessing dynamodb from a lambda function"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:UpdateItem",
+                "dynamodb:GetItem"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_logs" {
+  role       = aws_iam_role.iam_lambda.name
+  policy_arn = aws_iam_policy.lambda_to_dynamodb.arn
 }
