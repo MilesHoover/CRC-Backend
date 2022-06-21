@@ -46,16 +46,6 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 POLICY
 }
 
-# Root S3 bucket objects
-# # Feature is not currently working
-/*resource "aws_s3_object" "s3_objects" {
-  for_each = fileset("website/", "**")
-  bucket = aws_s3_bucket.s3_bucket.id
-  key = each.value
-  source = "website/${each.value}"
-  etag = filemd5("website/${each.value}")
-}*/
-
 # Redirect S3 bucket
 resource "aws_s3_bucket" "s3_redirect_bucket" {
   bucket = "www.${var.domain_name}"
