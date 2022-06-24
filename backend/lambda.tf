@@ -53,13 +53,4 @@ resource "aws_iam_role_policy_attachment" "attatch_get_policy" {
   policy_arn = aws_iam_policy.db_policy.arn
 }
 
-# Allows API to access GET lambda
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction" 
-  function_name = aws_lambda_function.counter_function.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.counter_api.execution_arn}/*"
-}
-
 
