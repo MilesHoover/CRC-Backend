@@ -5,7 +5,7 @@ backend/.terraform/**
 *.tfstate
 *.tfstate.*
 
-# Ignore Cypress modules and configs
+# Cypress modules and configs
 backend/cypress/cypress/downloads
 backend/cypress/cypress/fixtures
 backend/cypress/cypress/support
@@ -13,3 +13,6 @@ backend/cypress/node_modules
 backend/cypress/cypress.config.js
 backend/cypress/package-lock.json
 backend/cypress/package.json
+
+# Notes file
+notes.md
