@@ -1,4 +1,4 @@
-name: run my vanilla Cypress tests
+name: Test & Deploy Infra
 on: 
   push:
     branches:

@@ -1,15 +1,18 @@
 # .terraform directories
+
 .terraform/**
 
 # .tfstate files
+
 *.tfstate
 *.tfstate.*
 
 # Cypress modules and configs
-cypress/cypress/downloads
-cypress/cypress/fixtures
-cypress/cypress/support
-cypress/node_modules
-cypress/cypress.config.js
-package-lock.json
-cypress/package.json
+
+#cypress/downloads
+#cypress/fixtures
+#cypress/support
+node_modules
+#cypress.config.js
+#package-lock.json
+#package.json
