@@ -1,16 +1,41 @@
 name: Test & Deploy Infra
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  cypress-run:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      # Install NPM dependencies, cache them correctly
-      # and run all Cypress tests
-      - name: Cypress run
-        uses: cypress-io/github-action@v4
-        with:
-          browser: chrome
+
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-lates
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
+   steps:
+   - name: Checkout
+     uses: actions/checkout@v3
+
+   - name: Terraform Init
+     run: terraform init
+
+   - name: Terraform Validate
+     run: terraform validate -no-color
+
+   - name: Terraform Apply
+     run: terraform apply -auto-approve
+
+ cypress:
+   name: 'Cypress'
+   runs-on: ubuntu-latest
+
+   steps:
+     - name: Checkout
+       uses: actions/checkout@v2
+
+     - name: Cypress run
+       uses: cypress-io/github-action@v4
+       with:
+         browser: chrome
