@@ -9,9 +9,9 @@
 
 # Cypress modules and configs
 
-#cypress/downloads
-#cypress/fixtures
-#cypress/support
+
+cypress/fixtures
+cypress/support
 node_modules
 #cypress.config.js
 #package-lock.json
