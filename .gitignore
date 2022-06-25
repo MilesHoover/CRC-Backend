@@ -11,5 +11,5 @@ cypress/cypress/fixtures
 cypress/cypress/support
 cypress/node_modules
 cypress/cypress.config.js
-# package-lock.json
+package-lock.json
 cypress/package.json
