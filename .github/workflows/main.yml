@@ -18,5 +18,4 @@ jobs:
         uses: cypress-io/github-action@v2
         timeout-minutes: 10
         with:
-          working-directory: backend/cypress
           browser: firefox
