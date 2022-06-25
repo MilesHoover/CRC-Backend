@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Update me!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MilesHoover/cloud-resume-challenege.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MilesHoover/cloud-resume-challenege/issues"
+  },
+  "homepage": "https://github.com/MilesHoover/cloud-resume-challenege#readme",
+  "devDependencies": {
+    "cypress": "^10.2.0"
+  }
+}

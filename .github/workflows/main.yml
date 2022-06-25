@@ -1,23 +1,17 @@
 name: Test & Deploy Infra
-on: 
-  push:
-    branches:
-      - 'main'
-  workflow_dispatch:
+
+on: [push]
 
 jobs:
-  checkout-and-test:
+  cypress-run:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-
-      - name: Check out repository code
+      - name: Checkout
         uses: actions/checkout@v2
       # Install NPM dependencies, cache them correctly
       # and run all Cypress tests
-      - name: run cypress tests with firefox
+      - name: Cypress run
         uses: cypress-io/github-action@v4
-        timeout-minutes: 10
         with:
           build: npm run build
           start: npm start
