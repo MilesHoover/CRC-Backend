@@ -7,9 +7,9 @@ terraform {
   }
 
   backend "s3" {
-  bucket = "mileshoover.com"
-  key = "terraform.tfstate"
-  region = "us-east-1"
+    bucket = "mileshoover.com"
+    key = "terraform.tfstate"
+    region = "us-east-1"
 }
 
 }
