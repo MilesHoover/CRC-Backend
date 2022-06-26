@@ -1,10 +1,10 @@
 # .terraform directories
 
 .terraform.lock.hcl
-.terraform/providers
 
 # .tfstate files
 
+/.terraform
 terraform.tfstate.backup
 
 # Cypress modules and configs
