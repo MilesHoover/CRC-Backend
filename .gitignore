@@ -11,3 +11,7 @@ terraform.tfstate.backup
 
 node_modules
 
+# CRC Diagram
+
+crc-diagram.jpg
+
