@@ -10,4 +10,4 @@ My Diagram:
 
 ![Diagram](/crc-diagram.jpg)
 
-Want to learn more? Check out the [blogpost](https://www.linkedin.com/feed/update/urn:li:ugcPost:6953498773725597696?updateEntityUrn=urn%3Ali%3Afs_updateV2%3A%28urn%3Ali%3AugcPost%3A6953498773725597696%2CFEED_DETAIL%2CEMPTY%2CDEFAULT%2Cfalse%29) I wrote about this project!
+Want to learn more? Check out the [blog](https://www.linkedin.com/feed/update/urn:li:ugcPost:6953498773725597696?updateEntityUrn=urn%3Ali%3Afs_updateV2%3A%28urn%3Ali%3AugcPost%3A6953498773725597696%2CFEED_DETAIL%2CEMPTY%2CDEFAULT%2Cfalse%29) I wrote about this project!
