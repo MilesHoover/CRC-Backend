@@ -10,8 +10,3 @@ terraform.tfstate.backup
 # Cypress modules and configs
 
 node_modules
-
-# CRC Diagram
-
-crc-diagram.jpg
-
